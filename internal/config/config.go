@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -29,11 +28,6 @@ func LoadConfig() *Config {
 		DBPassword: os.Getenv("DB_PASSWORD"),
 		DBName:     os.Getenv("DB_NAME"),
 		DBSSLMode:  os.Getenv("DB_SSLMODE"),
-		JWTSecret:  os.Getenv("JWT_SECRET"),
-	}
-
-	if cfg.JWTSecret == "" {
-		log.Fatal("JWT_SECRET is required")
 	}
 
 	return cfg
