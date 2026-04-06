@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 
+	"interaction-service/internal/middleware"
 	"interaction-service/internal/models"
 	"interaction-service/internal/services"
 
