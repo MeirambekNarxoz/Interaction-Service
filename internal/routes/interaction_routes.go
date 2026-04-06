@@ -2,6 +2,7 @@ package routes
 
 import (
 	"interaction-service/internal/delivery/http"
+	"interaction-service/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +17,7 @@ func RegisterInteractionRoutes(
 	api.GET("/likes/count", likeHandler.CountLikes)
 
 	protected := api.Group("/")
-	protected.Use()
+	protected.Use(middleware.GatewayAuthMiddleware())
 	{
 		protected.POST("/likes", likeHandler.AddLike)
 		protected.DELETE("/likes", likeHandler.RemoveLike)

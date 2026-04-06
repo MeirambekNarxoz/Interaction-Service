@@ -7,9 +7,7 @@ import (
 	"interaction-service/internal/repository"
 	"interaction-service/internal/routes"
 	"interaction-service/internal/services"
-	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,18 +26,10 @@ func main() {
 
 	r := gin.Default()
 
-	r.Use(cors.New(cors.Config{
-		AllowAllOrigins: true,
-		AllowMethods:    []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:    []string{"Origin", "Content-Type", "Authorization"},
-		MaxAge:          12 * time.Hour,
-	}))
-
 	routes.RegisterInteractionRoutes(
 		r,
 		likeHandler,
 		bookmarkHandler,
-		cfg.JWTSecret,
 	)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
