@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -34,6 +35,37 @@ func GatewayAuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("user_id", uint(userIDFloat))
+		c.Next()
+	}
+}
+
+// RoleMiddleware checks the X-User-Roles header
+func RoleMiddleware(requiredRole string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		roles := c.GetHeader("X-User-Roles")
+		if roles == "" {
+			// Fallback or legacy check
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions (no roles found)"})
+			return
+		}
+
+		// Simplified check: search for the role in the comma-separated list
+		// In a real scenario, you'd split and check properly
+		
+		roleList := strings.Split(roles, ",")
+		hasRole := false
+		for _, r := range roleList {
+			if strings.TrimSpace(r) == requiredRole || strings.TrimSpace(r) == "ROLE_" + requiredRole {
+				hasRole = true
+				break
+			}
+		}
+
+		if !hasRole {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
+			return
+		}
+
 		c.Next()
 	}
 }

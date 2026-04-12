@@ -15,22 +15,26 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	db := database.InitDB(cfg)
-	db.AutoMigrate(&models.Like{}, &models.Bookmark{})
+	db.AutoMigrate(&models.Like{}, &models.Bookmark{}, &models.Report{})
 
 	likeRepo := repository.NewLikeRepository(db)
 	bookmarkRepo := repository.NewBookmarkRepository(db)
+	reportRepo := repository.NewReportRepository(db)
 
 	likeService := services.NewLikeService(likeRepo)
 	bookmarkService := services.NewBookmarkService(bookmarkRepo)
+	reportService := services.NewReportService(reportRepo)
 
 	likeHandler := http.NewLikeHandler(likeService)
 	bookmarkHandler := http.NewBookmarkHandler(bookmarkService)
+	reportHandler := http.NewReportHandler(reportService)
 
 	r := gin.Default()
 	routes.RegisterInteractionRoutes(
 		r,
 		likeHandler,
 		bookmarkHandler,
+		reportHandler,
 	)
 
 	if err := r.Run(":" + cfg.Port); err != nil {
