@@ -2,19 +2,24 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"interaction-service/internal/models"
+	"interaction-service/internal/rabbitmq"
 	"interaction-service/internal/repository"
+
+	"github.com/google/uuid"
 )
 
 type LikeService struct {
-	repo *repository.LikeRepository
+	repo     *repository.LikeRepository
+	producer *rabbitmq.RabbitMQProducer
 }
 
-func NewLikeService(repo *repository.LikeRepository) *LikeService {
-	return &LikeService{repo: repo}
+func NewLikeService(repo *repository.LikeRepository, producer *rabbitmq.RabbitMQProducer) *LikeService {
+	return &LikeService{repo: repo, producer: producer}
 }
 
-func (s *LikeService) AddLike(userID uint, targetType models.TargetType, targetID uint) error {
+func (s *LikeService) AddLike(userID uint, targetType models.TargetType, targetID uint, contentAuthorID uint, directionID uint) error {
 	if !models.IsValidTargetType(targetType) {
 		return errors.New("invalid target_type")
 	}
@@ -33,7 +38,26 @@ func (s *LikeService) AddLike(userID uint, targetType models.TargetType, targetI
 		TargetID:   targetID,
 	}
 
-	return s.repo.Create(like)
+	err = s.repo.Create(like)
+	if err != nil {
+		return err
+	}
+
+	// Publish Gamification Event if producer is available and target is a post/article
+	if s.producer != nil && contentAuthorID > 0 {
+		event := map[string]interface{}{
+			"eventId":     uuid.New().String(),
+			"userId":      contentAuthorID, // Recipient of XP
+			"type":        "REACTION_RECEIVED",
+			"targetId":    targetID,
+			"directionId": directionID,
+		}
+
+		routingKey := fmt.Sprintf("user.action.%s.received", targetType)
+		_ = s.producer.PublishEvent(routingKey, event)
+	}
+
+	return nil
 }
 
 func (s *LikeService) RemoveLike(userID uint, targetType models.TargetType, targetID uint) error {

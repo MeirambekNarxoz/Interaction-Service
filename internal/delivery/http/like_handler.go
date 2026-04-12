@@ -22,6 +22,8 @@ func NewLikeHandler(service *services.LikeService) *LikeHandler {
 type likeRequest struct {
 	TargetType string `json:"target_type" binding:"required"`
 	TargetID   uint   `json:"target_id" binding:"required"`
+	AuthorID   uint   `json:"author_id"`    // Optional, for gamification
+	DirectionID uint  `json:"direction_id"` // Optional, for gamification
 }
 
 func (h *LikeHandler) AddLike(c *gin.Context) {
@@ -37,7 +39,7 @@ func (h *LikeHandler) AddLike(c *gin.Context) {
 		return
 	}
 
-	err := h.service.AddLike(userID, models.TargetType(req.TargetType), req.TargetID)
+	err := h.service.AddLike(userID, models.TargetType(req.TargetType), req.TargetID, req.AuthorID, req.DirectionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
