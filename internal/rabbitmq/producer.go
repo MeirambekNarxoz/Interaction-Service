@@ -28,7 +28,7 @@ func NewRabbitMQProducer(url string) (*RabbitMQProducer, error) {
 
 	// Declare the exchange
 	err = ch.ExchangeDeclare(
-		"interaction-exchange", // name
+		"statistics-exchange", // name
 		"topic",                // type
 		true,                   // durable
 		false,                  // auto-deleted
@@ -56,7 +56,7 @@ func NewRabbitMQProducer(url string) (*RabbitMQProducer, error) {
 		err = ch.QueueBind(
 			"achievement-service-queue", // queue name
 			"user.action.#",             // routing key pattern
-			"interaction-exchange",      // exchange
+			"statistics-exchange",      // exchange
 			false,
 			nil,
 		)
@@ -81,7 +81,7 @@ func (p *RabbitMQProducer) PublishEvent(routingKey string, event interface{}) er
 	defer cancel()
 
 	err = p.channel.PublishWithContext(ctx,
-		"interaction-exchange", // exchange
+		"statistics-exchange", // exchange
 		routingKey,             // routing key
 		false,                  // mandatory
 		false,                  // immediate
