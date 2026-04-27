@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	_ "fmt"
+	_ "log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,7 +24,7 @@ func GetUserID(c *gin.Context) (uint, bool) {
 func GatewayAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userIDStr := c.GetHeader("X-User-Id")
-		
+
 		if userIDStr == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "x-user-id header is missing"})
 			return
@@ -50,10 +52,14 @@ func RoleMiddleware(requiredRoles ...string) gin.HandlerFunc {
 
 		roleList := strings.Split(roles, ",")
 		hasRole := false
+
 		for _, r := range roleList {
-			cleanRole := strings.TrimSpace(r)
+			cleanRole := strings.ToUpper(strings.TrimSpace(r))
+			// Remove ROLE_ prefix if it exists to compare pure roles
+			cleanRole = strings.TrimPrefix(cleanRole, "ROLE_")
+
 			for _, reqRole := range requiredRoles {
-				if cleanRole == reqRole || cleanRole == "ROLE_"+reqRole {
+				if cleanRole == strings.ToUpper(reqRole) {
 					hasRole = true
 					break
 				}
@@ -64,6 +70,7 @@ func RoleMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		}
 
 		if !hasRole {
+
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 			return
 		}

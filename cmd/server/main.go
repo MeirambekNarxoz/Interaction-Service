@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"interaction-service/internal/config"
 	"interaction-service/internal/database"
 	"interaction-service/internal/delivery/http"
-	"interaction-service/internal/models"
 	"interaction-service/internal/rabbitmq"
 	"interaction-service/internal/repository"
 	"interaction-service/internal/routes"
@@ -17,7 +17,11 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 	db := database.InitDB(cfg)
-	db.AutoMigrate(&models.Like{}, &models.Bookmark{}, &models.Report{})
+
+	// Create DB URL for golang-migrate
+	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBSSLMode)
+	database.RunMigrations(dbURL)
 
 	// Initialize RabbitMQ Producer
 	producer, err := rabbitmq.NewRabbitMQProducer(cfg.RabbitMQURL)
@@ -32,7 +36,7 @@ func main() {
 	reportRepo := repository.NewReportRepository(db)
 
 	likeService := services.NewLikeService(likeRepo, producer)
-	bookmarkService := services.NewBookmarkService(bookmarkRepo)
+	bookmarkService := services.NewBookmarkService(bookmarkRepo, producer)
 	reportService := services.NewReportService(reportRepo)
 
 	likeHandler := http.NewLikeHandler(likeService)

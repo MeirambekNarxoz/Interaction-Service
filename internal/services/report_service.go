@@ -26,18 +26,19 @@ func (s *ReportService) SubmitReport(reporterID uint, req models.SubmitReportReq
 		TargetType:     req.TargetType,
 		Reason:         req.Reason,
 		Status:         models.ReportStatusOpen,
+		RoomID:         req.RoomID,
 	}
 
 	return s.repo.Create(report)
 }
 
-func (s *ReportService) GetReports() ([]models.Report, error) {
-	return s.repo.GetAllActive()
+func (s *ReportService) GetReports(status string, roomID *uint) ([]models.Report, error) {
+	return s.repo.GetAllActive(status, roomID)
 }
 
 func (s *ReportService) UpdateReportStatus(id uint, status models.ReportStatus) error {
-	if status != models.ReportStatusRejected && status != models.ReportStatusResolved {
-		return errors.New("invalid status: must be REJECTED or RESOLVED")
+	if status != models.ReportStatusRejected && status != models.ReportStatusResolved && status != models.ReportStatusEscalated {
+		return errors.New("invalid status: must be REJECTED, RESOLVED or ESCALATED")
 	}
 
 	// Check if exists

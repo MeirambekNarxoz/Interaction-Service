@@ -18,11 +18,18 @@ func (r *ReportRepository) Create(report *models.Report) error {
 	return r.db.Create(report).Error
 }
 
-func (r *ReportRepository) GetAllActive() ([]models.Report, error) {
+func (r *ReportRepository) GetAllActive(status string, roomID *uint) ([]models.Report, error) {
 	var reports []models.Report
-	err := r.db.Where("status = ?", models.ReportStatusOpen).
-		Order("created_at DESC").
-		Find(&reports).Error
+	query := r.db.Order("created_at DESC")
+	if status != "" {
+		query = query.Where("status = ?", status)
+	} else {
+		query = query.Where("status = ?", models.ReportStatusOpen)
+	}
+	if roomID != nil {
+		query = query.Where("room_id = ?", *roomID)
+	}
+	err := query.Find(&reports).Error
 	return reports, err
 }
 

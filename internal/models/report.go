@@ -5,9 +5,10 @@ import "time"
 type ReportStatus string
 
 const (
-	ReportStatusOpen     ReportStatus = "OPEN"
-	ReportStatusRejected ReportStatus = "REJECTED"
-	ReportStatusResolved ReportStatus = "RESOLVED"
+	ReportStatusOpen      ReportStatus = "OPEN"
+	ReportStatusRejected  ReportStatus = "REJECTED"
+	ReportStatusResolved  ReportStatus = "RESOLVED"
+	ReportStatusEscalated ReportStatus = "ESCALATED"
 )
 
 type Report struct {
@@ -18,6 +19,7 @@ type Report struct {
 	TargetType     TargetType   `json:"target_type" gorm:"not null"`
 	Reason         string       `json:"reason" gorm:"not null"`
 	Status         ReportStatus `json:"status" gorm:"default:OPEN"`
+	RoomID         *uint        `json:"room_id" gorm:"index"`
 	CreatedAt      time.Time    `json:"created_at" gorm:"default:CURRENT_TIMESTAMP"`
 }
 
@@ -26,6 +28,7 @@ type SubmitReportRequest struct {
 	TargetAuthorID uint       `json:"target_author_id" binding:"required"`
 	TargetType     TargetType `json:"target_type" binding:"required"`
 	Reason         string     `json:"reason" binding:"required"`
+	RoomID         *uint      `json:"room_id"`
 }
 
 type UpdateReportStatusRequest struct {

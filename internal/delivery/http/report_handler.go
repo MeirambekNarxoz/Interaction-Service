@@ -42,7 +42,19 @@ func (h *ReportHandler) SubmitReport(c *gin.Context) {
 }
 
 func (h *ReportHandler) GetReports(c *gin.Context) {
-	reports, err := h.service.GetReports()
+	status := c.Query("status")
+	roomIDStr := c.Query("room_id")
+	
+	var roomIDPtr *uint
+	if roomIDStr != "" {
+		id, err := strconv.ParseUint(roomIDStr, 10, 32)
+		if err == nil {
+			val := uint(id)
+			roomIDPtr = &val
+		}
+	}
+
+	reports, err := h.service.GetReports(status, roomIDPtr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

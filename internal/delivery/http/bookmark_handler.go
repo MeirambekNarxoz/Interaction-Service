@@ -19,8 +19,10 @@ func NewBookmarkHandler(service *services.BookmarkService) *BookmarkHandler {
 }
 
 type bookmarkRequest struct {
-	TargetType string `json:"target_type" binding:"required"`
-	TargetID   uint   `json:"target_id" binding:"required"`
+	TargetType  string `json:"target_type" binding:"required"`
+	TargetID    uint   `json:"target_id" binding:"required"`
+	AuthorID    uint   `json:"author_id"`    // Optional, for gamification
+	DirectionID uint   `json:"direction_id"` // Optional, for gamification
 }
 
 func (h *BookmarkHandler) AddBookmark(c *gin.Context) {
@@ -36,7 +38,7 @@ func (h *BookmarkHandler) AddBookmark(c *gin.Context) {
 		return
 	}
 
-	err := h.service.AddBookmark(userID, models.TargetType(req.TargetType), req.TargetID)
+	err := h.service.AddBookmark(userID, models.TargetType(req.TargetType), req.TargetID, req.AuthorID, req.DirectionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
