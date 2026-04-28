@@ -33,6 +33,18 @@ func (r *ReportRepository) GetAllActive(status string, roomID *uint) ([]models.R
 	return reports, err
 }
 
+func (r *ReportRepository) GetAllForAdmin(roomID *uint) ([]models.Report, error) {
+	var reports []models.Report
+	query := r.db.Order("created_at DESC").
+		Where("status = ? OR status = ?", string(models.ReportStatusOpen), string(models.ReportStatusEscalated))
+	
+	if roomID != nil {
+		query = query.Where("room_id = ?", *roomID)
+	}
+	err := query.Find(&reports).Error
+	return reports, err
+}
+
 func (r *ReportRepository) GetByID(id uint) (*models.Report, error) {
 	var report models.Report
 	err := r.db.First(&report, id).Error

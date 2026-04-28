@@ -44,6 +44,7 @@ func (h *ReportHandler) SubmitReport(c *gin.Context) {
 func (h *ReportHandler) GetReports(c *gin.Context) {
 	status := c.Query("status")
 	roomIDStr := c.Query("room_id")
+	roles := middleware.GetUserRoles(c)
 	
 	var roomIDPtr *uint
 	if roomIDStr != "" {
@@ -54,7 +55,7 @@ func (h *ReportHandler) GetReports(c *gin.Context) {
 		}
 	}
 
-	reports, err := h.service.GetReports(status, roomIDPtr)
+	reports, err := h.service.GetReports(status, roomIDPtr, roles)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -77,9 +78,10 @@ func (h *ReportHandler) UpdateReportStatus(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateReportStatus(uint(id), req.Status)
+	roles := middleware.GetUserRoles(c)
+	err = h.service.UpdateReportStatus(uint(id), req.Status, roles)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 

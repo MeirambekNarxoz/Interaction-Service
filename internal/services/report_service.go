@@ -32,13 +32,36 @@ func (s *ReportService) SubmitReport(reporterID uint, req models.SubmitReportReq
 	return s.repo.Create(report)
 }
 
-func (s *ReportService) GetReports(status string, roomID *uint) ([]models.Report, error) {
+func (s *ReportService) GetReports(status string, roomID *uint, roles []string) ([]models.Report, error) {
+	// If Admin, and no status specified, show both OPEN and ESCALATED
+	if status == "" && hasRole(roles, "ADMIN") {
+		// We pass empty status to repository, which normally defaults to OPEN.
+		// Let's modify the repository to handle "actionable" reports for Admin.
+		return s.repo.GetAllForAdmin(roomID)
+	}
+
+	// Default status logic for others
+	if status == "" {
+		if hasRole(roles, "MODERATOR") {
+			status = string(models.ReportStatusOpen)
+		}
+	}
 	return s.repo.GetAllActive(status, roomID)
 }
 
-func (s *ReportService) UpdateReportStatus(id uint, status models.ReportStatus) error {
-	if status != models.ReportStatusRejected && status != models.ReportStatusResolved && status != models.ReportStatusEscalated {
-		return errors.New("invalid status: must be REJECTED, RESOLVED or ESCALATED")
+func (s *ReportService) UpdateReportStatus(id uint, status models.ReportStatus, roles []string) error {
+	isAdmin := hasRole(roles, "ADMIN")
+	isMod := hasRole(roles, "MODERATOR")
+
+	if !isAdmin && !isMod {
+		return errors.New("unauthorized: insufficient permissions")
+	}
+
+	// Moderator logic
+	if isMod && !isAdmin {
+		if status != models.ReportStatusRejected && status != models.ReportStatusEscalated {
+			return errors.New("moderators can only REJECT or ESCALATE reports to admins")
+		}
 	}
 
 	// Check if exists
@@ -47,5 +70,19 @@ func (s *ReportService) UpdateReportStatus(id uint, status models.ReportStatus) 
 		return errors.New("report not found")
 	}
 
-	return s.repo.UpdateStatus(id, status)
+	err = s.repo.UpdateStatus(id, status)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func hasRole(roles []string, target string) bool {
+	for _, r := range roles {
+		if r == target {
+			return true
+		}
+	}
+	return false
 }

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	_ "fmt"
+	"log"
 	_ "log"
 	"net/http"
 	"strconv"
@@ -18,6 +19,30 @@ func GetUserID(c *gin.Context) (uint, bool) {
 	}
 	userID, ok := val.(uint)
 	return userID, ok
+}
+
+// GetUserRoles retrieves roles from context (set by RoleMiddleware or Gateway headers)
+func GetUserRoles(c *gin.Context) []string {
+	rolesHeader := c.GetHeader("X-User-Roles")
+	if rolesHeader == "" {
+		return []string{}
+	}
+	rawList := strings.Split(rolesHeader, ",")
+	roles := make([]string, 0, len(rawList))
+	for _, r := range rawList {
+		roles = append(roles, strings.ToUpper(strings.TrimPrefix(strings.TrimSpace(r), "ROLE_")))
+	}
+	return roles
+}
+
+func HasRole(roles []string, target string) bool {
+	target = strings.ToUpper(target)
+	for _, r := range roles {
+		if r == target {
+			return true
+		}
+	}
+	return false
 }
 
 // GatewayAuthMiddleware reads the X-User-Id header injected by Spring Cloud Gateway
@@ -55,6 +80,9 @@ func RoleMiddleware(requiredRoles ...string) gin.HandlerFunc {
 
 		for _, r := range roleList {
 			cleanRole := strings.ToUpper(strings.TrimSpace(r))
+			// Debug log for roles
+			log.Printf("[AUTH DEBUG] Raw role from header: %s, Cleaned role: %s", r, cleanRole)
+
 			// Remove ROLE_ prefix if it exists to compare pure roles
 			cleanRole = strings.TrimPrefix(cleanRole, "ROLE_")
 
@@ -70,7 +98,7 @@ func RoleMiddleware(requiredRoles ...string) gin.HandlerFunc {
 		}
 
 		if !hasRole {
-
+			log.Printf("[AUTH DEBUG] Access denied. Required one of: %v, but user has: %s", requiredRoles, roles)
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "insufficient permissions"})
 			return
 		}
