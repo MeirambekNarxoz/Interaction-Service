@@ -32,7 +32,7 @@ func RegisterInteractionRoutes(
 
 		// Admin/Moderator routes
 		admin := protected.Group("/moderation")
-		admin.Use(middleware.RoleMiddleware("ADMIN", "MODERATOR"))
+		admin.Use(middleware.RoleMiddleware("ADMIN", "MODERATOR", "USER"))
 		{
 			admin.GET("/reports", reportHandler.GetReports)
 			admin.PUT("/reports/:id/status", reportHandler.UpdateReportStatus)

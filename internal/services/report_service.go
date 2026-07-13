@@ -40,9 +40,9 @@ func (s *ReportService) GetReports(status string, roomID *uint, roles []string) 
 		return s.repo.GetAllForAdmin(roomID)
 	}
 
-	// Default status logic for others
+	// Default status logic for others (MODERATOR or USER acting as local moderator)
 	if status == "" {
-		if hasRole(roles, "MODERATOR") {
+		if hasRole(roles, "MODERATOR") || hasRole(roles, "USER") {
 			status = string(models.ReportStatusOpen)
 		}
 	}
@@ -51,7 +51,7 @@ func (s *ReportService) GetReports(status string, roomID *uint, roles []string) 
 
 func (s *ReportService) UpdateReportStatus(id uint, status models.ReportStatus, roles []string) error {
 	isAdmin := hasRole(roles, "ADMIN")
-	isMod := hasRole(roles, "MODERATOR")
+	isMod := hasRole(roles, "MODERATOR") || hasRole(roles, "USER") // USER can be a local moderator
 
 	if !isAdmin && !isMod {
 		return errors.New("unauthorized: insufficient permissions")
